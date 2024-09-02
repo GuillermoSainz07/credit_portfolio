@@ -37,8 +37,13 @@ col_trans = ColumnTransformer([("cat_preprocess", TargetEncoder(), ["loan_grade"
 
 col_trans.fit_transform(X_train,y_train)
 
+X_train = col_trans.transform(X_train)
+X_val = col_trans.transform(X_val)
+X_test = col_trans.transform(X_test)
+
 
 TRACKING_SERVER_HOST = "ec2-3-133-151-150.us-east-2.compute.amazonaws.com"
+
 mlflow.set_tracking_uri(f'http://{TRACKING_SERVER_HOST}:5000')
 print(f'Tracking Server URI: {mlflow.get_tracking_uri()}')
 mlflow.set_experiment('xgb_pipeline_credit_model')
@@ -46,7 +51,7 @@ mlflow.set_experiment('xgb_pipeline_credit_model')
 
 with mlflow.start_run(run_name='XGB Credit Classifier'):
     xgb_clf = xgb.XGBClassifier(**params,
-                               early_stopping_rounds=20).set_fit_request(eval_set=True)
+                               early_stopping_rounds=20)
 
     xgb_clf.fit(X_train,y_train,
                 eval_set=[(X_val, y_val)],
@@ -59,9 +64,13 @@ with mlflow.start_run(run_name='XGB Credit Classifier'):
     y_pred_probabilities = xgb_clf.predict_proba(X_test)[:, 1]
 
     mlflow.log_params(xgb_clf.get_params())
-    mlflow.log_metric('log_loss', accuracy_score(y, y_pred_probabilities))
-    mlflow.log_metric('accuracy', accuracy_score(y, y_pred))
-    mlflow.log_metric('f1_score', f1_score(y, y_pred))
+    mlflow.log_metric('log_loss', log_loss(y_test, y_pred_probabilities))
+    mlflow.log_metric('accuracy', accuracy_score(y_test, y_pred))
+    mlflow.log_metric('f1_score', f1_score(y_test, y_pred))
     mlflow.xgboost.log_model(xgb_clf,'xgb_model')
     mlflow.sklearn.log_model(pipe, "xgb_pipeline")
+
+    # Registrar el modelo
+    mlflow.register_model("xgb_pipeline",
+                          "XGB Credit Classifier")
     
