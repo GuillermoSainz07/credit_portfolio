@@ -8,8 +8,8 @@ class PredictService:
 
     def make_inference(self, features:ModelFeatures):
         try:
-            model = joblib.load('C:/Users/PC/OneDrive/Documentos/credit_portfolio/model/model.pkl')
-            prepro = joblib.load('C:/Users/PC/OneDrive/Documentos/credit_portfolio/preprocessors/preprocessor.pkl')
+            model = joblib.load('model/model.pkl')
+            prepro = joblib.load('preprocessors/preprocessor.pkl')
 
             logging.info('Model loaded')
 
