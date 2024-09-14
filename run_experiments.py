@@ -13,6 +13,7 @@ from sklearn.metrics import log_loss, accuracy_score, f1_score
 import os
 
 from dotenv import load_dotenv
+import joblib
 
 load_dotenv()
 
@@ -35,7 +36,9 @@ col_trans = ColumnTransformer([("cat_preprocess", TargetEncoder(), ["loan_grade"
                                 ("cat_preprocess_2", TargetEncoder(), ["loan_intent"])],
                                 remainder='passthrough').set_output(transform='pandas')
 
-col_trans.fit_transform(X_train,y_train)
+col_trans.fit(X_train,y_train)
+
+joblib.dump(col_trans,'preprocessors/preprocessor.pkl')
 
 X_train = col_trans.transform(X_train)
 X_val = col_trans.transform(X_val)
@@ -56,6 +59,8 @@ with mlflow.start_run(run_name='XGB Credit Classifier'):
     xgb_clf.fit(X_train,y_train,
                 eval_set=[(X_val, y_val)],
                 verbose=5)
+    
+    joblib.dump(xgb_clf,'model/model.pkl')
     
     pipe = Pipeline([('transformer',col_trans),
                  ('xgb_model',xgb_clf)])
